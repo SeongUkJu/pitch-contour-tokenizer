@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+/weights/
+/wandb/
+/data/
+/out/
+*.log
+.hydra/
+*.ipynb

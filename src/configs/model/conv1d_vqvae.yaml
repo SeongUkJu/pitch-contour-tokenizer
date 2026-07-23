@@ -1,0 +1,20 @@
+name: Conv1DVQVAE
+params:
+  receptive_field: ${dataset.params.window}
+  latent_dim: 32
+  in_channels: 1
+  separate: true
+
+  median_field: ${model.params.receptive_field}
+  use_gradual_size: false
+  num_layers: 6
+
+  kernel_size: 3
+  dilation: 1
+  cnn_dropout: 0
+  activation: relu
+
+  num_codebooks: 256
+  beta: 2.0
+  init: kmeans
+  ortho_reg: 0.0

@@ -1,0 +1,25 @@
+run: false
+offset: 4
+skip: []
+force: false
+
+# To enable the NIA classification experiments, replace the two nulls with blocks
+# shaped like this (see README "Experiments"):
+#   nia:
+#     random_seed: ${random_seed}
+#     data:
+#       data_pth: /path/to/nia_contour_csvs
+#       metadata_pth: /path/to/nia_label_stratified_by_segment.csv
+#     dataset:
+#       name: "NIAFixedClsDataset"
+#       params:
+#         window: ${dataset.params.window}
+#         weight: confidence
+#     split:
+#       name: 'stratified'
+#       params:
+#         with_test: True
+#     train:
+#       dataset_maker: "ClsDatasetMaker"
+nia: null
+nia_vocal: null

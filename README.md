@@ -1,0 +1,164 @@
+# Pitch Contour Tokenization using VQ-VAE and Its Application on Korean Traditional Music Analysis
+
+**Seonguk Ju, Seola Cho, Sooin Chung, Danbinaerin Han, Dasaem Jeong**
+
+The official implementation of the ISMIR 2026 paper *"Pitch Contour
+Tokenization using VQ-VAE and Its Application on Korean Traditional
+Music Analysis"*.
+
+[**Paper**](#) &nbsp;|&nbsp;
+[**Demo**](https://seongukju.github.io/pitch-contour-tokenizer-page/)
+<!-- TODO(camera-ready): paper / arXiv links -->
+
+[![Code License: MIT](https://img.shields.io/badge/code%20license-MIT-blue)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%E2%80%933.13-blue)](pyproject.toml)
+<!-- TODO(camera-ready): arXiv badge -->
+
+The model learns a discrete vocabulary of local pitch-contour patterns
+directly from unlabeled audio:
+
+* **Contour tokenizer** — A 1D convolutional VQ-VAE over fixed-length
+  (1.28 s, 100 Hz) pitch-contour segments. Each median-subtracted
+  segment is encoded, quantized to one of 256 codebook entries — its
+  discrete token — and decoded back to a contour.
+* **Transformation-minimized loss** — The reconstruction is evaluated
+  under the best alignment among candidate temporal and pitch-domain
+  transformations (tempo, zoom, y-offset) and only the minimum error is
+  back-propagated, so tokens stay stable across segmentation positions
+  and small variations in timing and pitch range.
+
+| Config | Model | Loss | Notes |
+|---|---|---|---|
+| `contour_ae` | Conv1DAE | MSE | AE baseline (+ post-hoc KMeans codes) |
+| `contour_vqvae` | Conv1DVQVAE | MSE | VQ-VAE baseline |
+| `foffset_vqvae` | OffsetConv1DVQVAE | Offset-MSE | tempo + zoom + y-offset candidates (paper main) |
+| `xoffset_vqvae` | OffsetConv1DVQVAE | Offset-MSE | tempo offsets only |
+
+---
+
+## Install
+
+**With [uv](https://docs.astral.sh/uv/) (recommended)** — installs the exact
+locked versions from `uv.lock`:
+
+```bash
+# one-time uv install, if needed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+uv sync   # creates .venv/ and installs all dependencies
+```
+
+Then either prefix commands with `uv run` (no activation needed), e.g.
+`uv run python src/train.py ...`, or activate the environment with
+`source .venv/bin/activate` and use the commands below as written.
+
+**With pip:**
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Requires Python 3.10–3.13. Tested with Python 3.10, PyTorch 2.0 (CUDA 11.8)
+and 2.13 (CPU).
+
+---
+
+## Reproducing the paper
+
+### 1 · Prepare pitch-contour CSVs
+
+No dataset ships with this repo. Provide per-clip pitch-contour CSVs
+(e.g. [PESTO](https://github.com/SonyCSLParis/pesto) or
+[CREPE](https://github.com/marl/crepe) output) with at least the columns:
+
+- `frequency` — F0 in Hz per frame
+- `confidence` — voicing confidence in [0, 1]
+
+Frames are assumed to be 10 ms (100 Hz). CSVs are discovered recursively
+(`rglob`) under `data.data_pth`, so any directory nesting works.
+Frames with `confidence < 0.5` are masked/interpolated (see
+`src/configs/dataset/full_threshold.yaml`).
+
+### 2 · Train
+
+```bash
+python src/train.py --config-name foffset_vqvae data.data_pth=/path/to/csvs
+```
+
+- CLI dotted overrides take precedence over the YAML files; see
+  `src/configs/` for the full set of knobs.
+- WandB is disabled by default. Enable with `wandb.project=<name>`
+  (requires login).
+- Checkpoints + resolved `config.yaml` land in `weights/<run_name>/`.
+- VQ codebooks are initialized with k-means over encoder latents
+  (`model.params.init=kmeans`).
+
+### 3 · Post-training experiments
+
+Add `exp.run=true` to run the paper's analyses after training:
+
+- **KLD & Code-Flip** (token consistency) — run on the held-out set of
+  *your* data; no extra assets needed.
+- **NIA sigimsae classification** — requires the NIA Gugak dataset
+  (available via [AI-Hub](https://aihub.or.kr), Korea) plus a metadata
+  CSV with columns `filename,onset,offset,label,split`, where `label`
+  is one of `southern_flick`, `southern_vibrato`, `western_vibrato`,
+  `soft_vibrato`, `upward_accent`, `descending_slide`.
+  Fill in the `nia:`/`nia_vocal:` blocks in `src/configs/exp/default.yaml`
+  (a commented template is provided there). When unset, these stages are
+  skipped.
+
+### 4 · Inference
+
+```bash
+python src/infer.py --run_dir weights/<run_name> --input /path/to/contour.csv --out out/
+```
+
+Writes `reconstructions.csv` (`window, frame, target_midi, recon_midi`)
+and target-vs-reconstruction plots.
+
+---
+
+## Directory layout
+
+```
+src/
+    train.py                  # config-driven training entry point
+    trainers.py               # AETrainer / VQTrainer loops
+    experiments.py            # post-training analyses (KLD, code-flip, NIA)
+    infer.py                  # checkpoint inference on a contour CSV
+    models/
+        model_zoo.py          # Conv1DAE, Conv1DVQVAE, OffsetConv1DVQVAE
+        modules.py            # encoder / decoder / vector-quantizer blocks
+    losses/loss_zoo.py        # MSELoss, OffsetMSELoss, VectorQuantizeLoss
+    datasets/dataset_zoo.py   # contour-CSV datasets (+ NIA / Pansori variants)
+    metrics/metric_zoo.py     # Perplexity, Accuracy
+    schedulers/scheduler_zoo.py  # warmup + cosine LR schedule
+    utils/                    # data split, k-means init, inference helpers
+    configs/                  # Hydra configs (one YAML per model preset)
+
+pyproject.toml + uv.lock      # locked environment (uv)
+requirements.txt              # pip fallback
+```
+
+---
+
+## Citation
+
+```bibtex
+% TODO(camera-ready): replace with the final ISMIR 2026 BibTeX entry
+@inproceedings{ju2026pitchcontour,
+  title     = {Pitch Contour Tokenization using {VQ-VAE} and Its Application
+               on Korean Traditional Music Analysis},
+  author    = {Ju, Seonguk and Cho, Seola and Chung, Sooin and
+               Han, Danbinaerin and Jeong, Dasaem},
+  booktitle = {Proceedings of the 27th International Society for Music
+               Information Retrieval Conference (ISMIR)},
+  year      = {2026},
+}
+```
+
+## License
+
+[MIT](LICENSE).

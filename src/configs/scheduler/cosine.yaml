@@ -1,0 +1,7 @@
+name: CosineLRScheduler
+params:
+  num_iterations: ${train.num_iterations}
+  decay_step_rate: 0.8
+  warmup_steps: 3000
+  lr_min_ratio: 0.1
+  cycle_length: 1.0

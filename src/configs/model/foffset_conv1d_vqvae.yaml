@@ -1,0 +1,27 @@
+name: OffsetConv1DVQVAE
+params:
+  receptive_field: ${dataset.params.window}
+  latent_dim: 32
+  in_channels: 1
+  separate: true
+
+  offset_params:
+    tempo_sr: [50, 54, 60]
+    zoom_ratio: [0.85, 1.0, 1.15]
+    y_offset: [-0.1, 0.0, 0.1]
+    step: 1
+
+  median_field: ${model.params.receptive_field}
+  use_gradual_size: false
+  num_layers: 6
+
+  kernel_size: 3
+  dilation: 1
+  cnn_dropout: 0
+  activation: relu
+
+  num_codebooks: 256
+  beta: 2.0
+  init: kmeans
+  ortho_reg: 0.0
+  use_simvq: False

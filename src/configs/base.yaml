@@ -1,0 +1,32 @@
+defaults:
+  - data: default
+  - dataset: full_threshold
+  - scheduler: cosine
+  - exp: default
+  - _self_
+
+hydra:
+  run:
+    dir: .
+
+random_seed: 42
+
+optim:
+  name: AdamW
+  params:
+    lr: 0.001
+
+train:
+  train_all: True
+
+  batch_size: 1024
+  num_iterations: 50000
+  eval_interval: 1000
+  save_interval: 10000
+  log_interval: 500
+
+dir:
+  save_dir: weights
+
+wandb:
+  project: null

@@ -1,0 +1,9 @@
+defaults:
+  - base
+  - model: xoffset_conv1d_vqvae
+  - loss: offset_mse
+  - train: vq
+  - _self_
+
+metric:
+  - Perplexity

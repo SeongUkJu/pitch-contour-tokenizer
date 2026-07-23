@@ -1,0 +1,5 @@
+name: MSELoss
+params:
+  reduction: mean
+  # use_weight: True
+  use_weight: False

@@ -1,0 +1,9 @@
+name: FullPitchThresholdDataset
+params:
+  window: 128
+  weight:
+    - confidence
+  threshold:
+    confidence: 0.5
+  norm_midi: False
+  num_interpolate: 2

@@ -1,0 +1,6 @@
+name: OffsetMSELoss
+params:
+  receptive_field: ${model.params.receptive_field}
+  reduction: mean
+  # use_weight: True
+  use_weight: False

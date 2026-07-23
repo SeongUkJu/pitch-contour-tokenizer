@@ -1,0 +1,38 @@
+run: false
+offset: 4
+skip: []
+force: false
+
+nia:
+  random_seed: ${random_seed}
+  data:
+    data_pth: ${data.nia_data_pth}
+    metadata_pth: data/meta/nia_label/nia_label_stratified_by_segment.csv
+  dataset:
+    name: "NIAFixedClsDataset"
+    params:
+      window: ${dataset.params.window}
+      weight: confidence
+  split:
+    name: 'stratified'
+    params:
+      with_test: True
+  train:
+    dataset_maker: "ClsDatasetMaker"
+
+nia_vocal:
+  random_seed: ${random_seed}
+  data:
+    data_pth: ${data.nia_data_pth}
+    metadata_pth: data/meta/nia_label/nia_label_stratified_by_segment_vocal_no_jeon.csv
+  dataset:
+    name: "NIAFixedClsDataset"
+    params:
+      window: ${dataset.params.window}
+      weight: confidence
+  split:
+    name: 'stratified'
+    params:
+      with_test: True
+  train:
+    dataset_maker: "ClsDatasetMaker"

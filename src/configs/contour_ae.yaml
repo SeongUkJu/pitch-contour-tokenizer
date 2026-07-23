@@ -1,0 +1,11 @@
+defaults:
+  - base
+  - model: conv1d_ae
+  - loss: mse
+  - train: ae
+  - _self_
+
+metric:
+
+exp:
+  n_codes_list: [128, 256, 512]
