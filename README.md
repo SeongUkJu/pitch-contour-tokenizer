@@ -177,6 +177,18 @@ src/
     utils/                    # data split, k-means init, inference helpers
     configs/                  # Hydra configs (one YAML per model preset)
 
+weights/                      # pretrained checkpoints (from Releases; gitignored)
+    autoencoder/              # best_model.pt + config.yaml per model
+    vqvae/
+    temporal_align_vqvae/
+    all_transformation_vqvae/ # paper main
+
+data/                         # datasets (from Releases; gitignored)
+    inhouse_data/             # pansori training corpus (CREPE contours)
+    nia_gugak_data/           # NIA Gugak contours
+    pansori_annotated_data/   # mode-annotated pansori contours
+    meta/                     # NIA & pansori metadata CSVs
+
 pyproject.toml + uv.lock      # locked environment (uv)
 requirements.txt              # pip fallback
 ```
