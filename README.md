@@ -7,7 +7,8 @@ Tokenization using VQ-VAE and Its Application on Korean Traditional
 Music Analysis"*.
 
 [**Paper**](#) &nbsp;|&nbsp;
-[**Demo**](https://seongukju.github.io/pitch-contour-tokenizer-page/)
+[**Demo**](https://seongukju.github.io/pitch-contour-tokenizer-page/) &nbsp;|&nbsp;
+[**Data & Weights**](https://github.com/SeongUkJu/pitch-contour-tokenizer/releases)
 <!-- TODO(camera-ready): paper / arXiv links -->
 
 [![Code License: MIT](https://img.shields.io/badge/code%20license-MIT-blue)](LICENSE)
@@ -64,12 +65,49 @@ and 2.13 (CPU).
 
 ---
 
+## Download data & weights
+
+The paper's pitch-contour datasets and pretrained checkpoints are attached
+to [GitHub Releases](https://github.com/SeongUkJu/pitch-contour-tokenizer/releases):
+
+| Asset | Contents | Size |
+|---|---|---|
+| `checkpoints.tar.gz` | 4 pretrained models (`best_model.pt` + training `config.yaml` each) | ~1 MB |
+| `inhouse_data.tar.gz` | pansori training corpus (CREPE contour CSVs) + `rename_map.csv` | ~2.0 GB |
+| `nia_pansori_meta.tar.gz` | NIA Gugak contours, annotated pansori contours, metadata CSVs | ~0.5 GB |
+| `SHA256SUMS.txt` | checksums for the assets above | — |
+
+Extract from the repository root:
+
+```bash
+sha256sum -c SHA256SUMS.txt              # optional integrity check
+tar xzf checkpoints.tar.gz               # → weights/<model>/
+mkdir -p data
+tar xzf inhouse_data.tar.gz -C data/     # → data/inhouse_data/
+tar xzf nia_pansori_meta.tar.gz -C data/ # → data/{nia_gugak_data,pansori_annotated_data,meta}/
+```
+
+Checkpoint ↔ config ↔ paper mapping:
+
+| Checkpoint dir | Config | Paper method |
+|---|---|---|
+| `weights/autoencoder` | `contour_ae` | Autoencoder baseline |
+| `weights/vqvae` | `contour_vqvae` | VQ-VAE |
+| `weights/temporal_align_vqvae` | `xoffset_vqvae` | + temporal align |
+| `weights/all_transformation_vqvae` | `foffset_vqvae` | + all transformations (paper main) |
+
+With the released data in place, the presets `data=crepe` and `exp=nia_pair`
+point at it directly, e.g.
+`python src/train.py --config-name foffset_vqvae data=crepe exp=nia_pair exp.run=true`.
+
+---
+
 ## Reproducing the paper
 
 ### 1 · Prepare pitch-contour CSVs
 
-No dataset ships with this repo. Provide per-clip pitch-contour CSVs
-(e.g. [PESTO](https://github.com/SonyCSLParis/pesto) or
+Use the released datasets above, or provide your own per-clip pitch-contour
+CSVs (e.g. [PESTO](https://github.com/SonyCSLParis/pesto) or
 [CREPE](https://github.com/marl/crepe) output) with at least the columns:
 
 - `frequency` — F0 in Hz per frame
@@ -112,11 +150,12 @@ Add `exp.run=true` to run the paper's analyses after training:
 ### 4 · Inference
 
 ```bash
-python src/infer.py --run_dir weights/<run_name> --input /path/to/contour.csv --out out/
+python src/infer.py --run_dir weights/all_transformation_vqvae --input /path/to/contour.csv --out out/
 ```
 
-Writes `reconstructions.csv` (`window, frame, target_midi, recon_midi`)
-and target-vs-reconstruction plots.
+Works with your own training runs (`weights/<run_name>`) or the released
+checkpoints. Writes `reconstructions.csv`
+(`window, frame, target_midi, recon_midi`) and target-vs-reconstruction plots.
 
 ---
 
