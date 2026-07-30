@@ -60,7 +60,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Requires Python 3.10–3.13. Tested with Python 3.10, PyTorch 2.0 (CUDA 11.8)
+Requires Python 3.10–3.13. Tested with Python 3.10, PyTorch 2.8 (CUDA 12.8)
 and 2.13 (CPU).
 
 ---
@@ -156,6 +156,26 @@ python src/infer.py --run_dir weights/all_transformation_vqvae --input /path/to/
 Works with your own training runs (`weights/<run_name>`) or the released
 checkpoints. Writes `reconstructions.csv`
 (`window, frame, target_midi, recon_midi`) and target-vs-reconstruction plots.
+
+### Reproducibility notes
+
+- **Released checkpoints → paper numbers.** Inference and the post-training
+  analyses are deterministic (the analysis-side k-means is pinned to a single
+  thread via `threadpoolctl`), so the released checkpoints reproduce the
+  reported numbers exactly.
+- **Retraining VQ models does not reproduce the released weights.** The VQ
+  codebook is initialized with k-means over encoder latents, and scikit-learn's
+  multi-threaded k-means is non-deterministic across runs even with a fixed
+  `random_state`: parallel floating-point reductions change the summation
+  order, and the resulting tiny differences in the initial codebook are
+  amplified over training. Retraining with identical code, data, and seed
+  therefore converges to different (equally valid) weights; qualitative
+  conclusions were consistent across reruns.
+- **Retraining the autoencoder is bit-exact reproducible** in the same
+  software/hardware environment (fixed seed, deterministic cuDNN) — its
+  training involves no k-means.
+- Released checkpoints were trained with Python 3.10, PyTorch 2.8.0
+  (CUDA 12.8), and scikit-learn 1.6.1 on an NVIDIA RTX 4090.
 
 ---
 

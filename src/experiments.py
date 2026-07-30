@@ -9,6 +9,7 @@ import numpy as np
 from umap import UMAP
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
+from threadpoolctl import threadpool_limits
 
 from utils.infer_utils import *
 from utils.data_utils import ClsDatasetMaker
@@ -238,7 +239,9 @@ def run_exp_ae(cfg: DictConfig, model, testset, save_dir: Path, run=None, device
             new_run = run
 
         kmeans = KMeans(n_clusters=n_codes, random_state=cfg.random_seed)
-        kmeans.fit(latent_red)
+        # multi-threaded KMeans fit is nondeterministic even with fixed random_state
+        with threadpool_limits(limits=1):
+            kmeans.fit(latent_red)
 
         # KLD & Code Flip
         for end_offset in [window//2 - offset, window - offset]:
