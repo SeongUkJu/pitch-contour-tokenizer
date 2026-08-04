@@ -1,3 +1,4 @@
+import csv
 import random
 from typing import Tuple
 from pathlib import Path
@@ -14,7 +15,8 @@ class BaseDatasetMaker:
     def __init__(self, 
                  config: DictConfig,) -> None:
         set_seed(config.random_seed)
-        self.data_pth = sorted(Path(config.data.data_pth).rglob('*.csv'))
+        self.data_root = Path(config.data.data_pth)
+        self.data_pth = sorted(self.data_root.rglob('*.csv'))
 
         self.dataset_class = getattr(dataset_zoo, config.dataset.name)
         self.dataset_params = config.dataset.params
@@ -24,7 +26,9 @@ class BaseDatasetMaker:
 
 
     def _get_random_split(self) -> Tuple[list | None]:
-        random.shuffle(self.data_pth)
+        # Fixed split, independent of random_seed (so seed sweeps share the same split).
+        rng = random.Random(self.split_params.get('split_seed', 42))
+        rng.shuffle(self.data_pth)
         split_ratio = self.split_params.split_ratio
         n_total = len(self.data_pth)
 
@@ -39,9 +43,37 @@ class BaseDatasetMaker:
         return train_pth, valid_pth, test_pth
 
 
+    def _get_manifest_split(self) -> Tuple[list | None]:
+        # Explicit per-file split (ships the paper's exact split for the released corpus).
+        manifest = {}
+        with open(self.split_params.manifest_pth, newline='') as f:
+            for row in csv.DictReader(f):
+                manifest[row['path']] = row['split']
+
+        buckets = {'train': [], 'valid': [], 'test': []}
+        missing = []
+        for p in self.data_pth:
+            rel = str(p.relative_to(self.data_root))
+            if rel in manifest:
+                buckets[manifest[rel]].append(p)
+            else:
+                missing.append(rel)
+        if missing:
+            raise ValueError(
+                f"{len(missing)} files under {self.data_root} are not in the split manifest "
+                f"{self.split_params.manifest_pth} (e.g. {missing[0]}); use split=random for custom data.")
+        matched = sum(len(v) for v in buckets.values())
+        if matched != len(manifest):
+            print(f"[split] warning: manifest lists {len(manifest)} files but only {matched} were found on disk.")
+
+        return buckets['train'], buckets['valid'], buckets['test'] or None
+
+
     def _get_split(self) -> Tuple[list | None]:
         if self.split_mode == 'random':
             train_pth, valid_pth, test_pth = self._get_random_split()
+        elif self.split_mode == 'manifest':
+            train_pth, valid_pth, test_pth = self._get_manifest_split()
         else:
             raise NotImplementedError
 

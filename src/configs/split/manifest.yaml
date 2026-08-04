@@ -1,0 +1,4 @@
+# The paper's exact train/valid/test split for the released corpus (data=crepe).
+name: manifest
+params:
+  manifest_pth: splits/inhouse_crepe_split.csv
