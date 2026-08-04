@@ -11,7 +11,6 @@ import trainers
 from losses import loss_zoo
 from models import model_zoo
 from metrics import metric_zoo
-from datasets import dataset_zoo
 from schedulers import scheduler_zoo
 
 from utils import data_utils
@@ -52,16 +51,10 @@ def main(cfg):
 
 
     # Dataset
-    if cfg.train.get('train_all', False):
-        dataset_params = OmegaConf.to_container(cfg.dataset.params, resolve=True)
-        trainset = getattr(dataset_zoo, cfg.dataset.name)(cfg.data.data_pth, **dataset_params, is_valid=False)
-        validset = getattr(dataset_zoo, cfg.dataset.name)(cfg.data.data_pth, **dataset_params, is_valid=True)
-        testset = validset
-    else:
-        dataset_maker_name = cfg.train.get('dataset_maker', 'BaseDatasetMaker')
-        dataset_maker_class = getattr(data_utils, dataset_maker_name)
-        dataset_maker = dataset_maker_class(cfg)
-        trainset, validset, testset = dataset_maker.get_datasets()
+    dataset_maker_name = cfg.train.get('dataset_maker', 'BaseDatasetMaker')
+    dataset_maker_class = getattr(data_utils, dataset_maker_name)
+    dataset_maker = dataset_maker_class(cfg)
+    trainset, validset, testset = dataset_maker.get_datasets()
     print(f"Length of dataset: {len(trainset)}, {len(validset)}, {len(testset) if testset is not None else None}")
 
 
@@ -132,7 +125,7 @@ def main(cfg):
         model_name = cfg.model.name
 
         if model_name == 'Conv1DAE':
-            run_exp_ae(cfg, trainer.model, testset, save_dir, run=run, device=DEV)
+            run_exp_ae(cfg, trainer.model, trainset, testset, save_dir, run=run, device=DEV)
 
         elif model_name in ('Conv1DVQVAE', 'OffsetConv1DVQVAE'):
             run_exp(cfg, trainer.model, testset, save_dir, run=run, device=DEV)

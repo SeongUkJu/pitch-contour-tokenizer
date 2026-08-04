@@ -1,0 +1,5 @@
+name: random
+params:
+  split_ratio: [0.8, 0.1]  # train 0.8, valid 0.1, remaining 0.1 test
+  with_test: True
+  split_seed: 42  # fixed split, independent of random_seed

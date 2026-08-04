@@ -163,7 +163,7 @@ def run_exp(cfg: DictConfig, model, testset, save_dir: Path, run=None, device='c
 
 # ---------- AE (multi n_codes via separate wandb runs) ----------
 
-def run_exp_ae(cfg: DictConfig, model, testset, save_dir: Path, run=None, device='cuda'):
+def run_exp_ae(cfg: DictConfig, model, trainset, testset, save_dir: Path, run=None, device='cuda'):
     if not cfg.get('exp', False):
         return
 
@@ -193,11 +193,12 @@ def run_exp_ae(cfg: DictConfig, model, testset, save_dir: Path, run=None, device
     skip = set(cfg.exp.get('skip', []))
     force = cfg.exp.get('force', False)
 
-    # Latent extraction (n_codes-independent — done once)
-    dl = DataLoader(testset, batch_size=batch_size, shuffle=False, drop_last=False)
+    # Latent extraction (n_codes-independent — done once):
+    # scaler/umap/kmeans are fit on trainset latents; testset is only transformed.
+    dl = DataLoader(trainset, batch_size=batch_size, shuffle=False, drop_last=False)
     latent = []
     with torch.inference_mode():
-        for x, weight, meta in tqdm(dl, desc='Collect Latent'):
+        for x, weight, meta in tqdm(dl, desc='Collect Latent (train)'):
             _, _, z = model(x.to(device))
             latent.append(z.squeeze().detach().cpu())
     latent = torch.cat(latent, dim=0).numpy()
