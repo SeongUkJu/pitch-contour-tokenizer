@@ -10,8 +10,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
-from datasets.dataset_zoo import FullPitchDataset
-
 def set_seed(seed: int=42) -> None:
     """Set seed"""
     random.seed(seed)
@@ -30,16 +28,7 @@ def get_centroid(model: nn.Module,
                 dataset: Dataset,
                 device: torch.device,
                 cfg: DictConfig) -> torch.Tensor:
-    rng_state = random.getstate()
-    saved_is_valid = dataset.is_valid
-    saved_sampled_data = getattr(dataset, 'sampled_data', None)
-    saved_loaded_data = dataset.loaded_data if not isinstance(dataset, FullPitchDataset) else None
-
-    dataset.is_valid = True
-    if isinstance(dataset, FullPitchDataset):
-        dataset.sampled_data = dataset.sample_receptive_field()
-    else:
-        dataset.loaded_data = dataset._load_valid_data()
+    # Use the trainset's current sampled windows as-is (no resampling).
     dataloader = DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=False, drop_last=False,
                             num_workers=4, pin_memory=True)
 
@@ -63,13 +52,5 @@ def get_centroid(model: nn.Module,
     kmeans.fit(latent.detach().cpu().numpy())
 
     centroid = torch.Tensor(kmeans.cluster_centers_)
-
-    dataset.is_valid = saved_is_valid
-    if isinstance(dataset, FullPitchDataset):
-        if saved_sampled_data is not None:
-            dataset.sampled_data = saved_sampled_data
-    else:
-        dataset.loaded_data = saved_loaded_data
-    random.setstate(rng_state)
 
     return centroid

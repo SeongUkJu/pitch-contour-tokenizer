@@ -96,9 +96,9 @@ Checkpoint ↔ config ↔ paper mapping:
 | `weights/temporal_align_vqvae` | `xoffset_vqvae` | + temporal align |
 | `weights/all_transformation_vqvae` | `foffset_vqvae` | + all transformations (paper main) |
 
-With the released data in place, the presets `data=crepe` and `exp=nia_pair`
-point at it directly, e.g.
-`python src/train.py --config-name foffset_vqvae data=crepe exp=nia_pair exp.run=true`.
+With the released data in place, the presets `data=crepe`, `split=manifest`
+and `exp=nia_pair` point at it directly, e.g.
+`python src/train.py --config-name foffset_vqvae data=crepe split=manifest exp=nia_pair exp.run=true`.
 
 ---
 
@@ -126,6 +126,11 @@ python src/train.py --config-name foffset_vqvae data.data_pth=/path/to/csvs
 
 - CLI dotted overrides take precedence over the YAML files; see
   `src/configs/` for the full set of knobs.
+- Clips are split 8:1:1 into train/valid/test with a fixed shuffle
+  (`split.params.split_seed`, independent of `random_seed`), so seed
+  sweeps share an identical split. On the released corpus, add
+  `split=manifest` to use the paper's exact partition
+  (`splits/inhouse_crepe_split.csv`).
 - WandB is disabled by default. Enable with `wandb.project=<name>`
   (requires login).
 - Checkpoints + resolved `config.yaml` land in `weights/<run_name>/`.
@@ -136,8 +141,10 @@ python src/train.py --config-name foffset_vqvae data.data_pth=/path/to/csvs
 
 Add `exp.run=true` to run the paper's analyses after training:
 
-- **KLD & Code-Flip** (token consistency) — run on the held-out set of
-  *your* data; no extra assets needed.
+- **KLD & Code-Flip** (token consistency) — run on the held-out test
+  split of *your* data; no extra assets needed. For the autoencoder,
+  the post-hoc token space (scaler/UMAP/k-means) is fit on the train
+  split and applied to the test split.
 - **NIA sigimsae classification** — requires the NIA Gugak dataset
   (available via [AI-Hub](https://aihub.or.kr), Korea) plus a metadata
   CSV with columns `filename,onset,offset,label,split`, where `label`
@@ -163,6 +170,12 @@ checkpoints. Writes `reconstructions.csv`
   analyses are deterministic (the analysis-side k-means is pinned to a single
   thread via `threadpoolctl`), so the released checkpoints reproduce the
   reported numbers exactly.
+- **The paper's split ships with the repo.** The released corpus is a
+  (romanized) renamed copy of the internal data, so the default
+  `split=random` shuffle sorts files differently and yields a different
+  8:1:1 partition. `split=manifest` (`splits/inhouse_crepe_split.csv`)
+  reproduces the paper's exact train/valid/test membership — use it
+  whenever comparing against the released checkpoints or paper numbers.
 - **Retraining VQ models does not reproduce the released weights.** The VQ
   codebook is initialized with k-means over encoder latents, and scikit-learn's
   multi-threaded k-means is non-deterministic across runs even with a fixed
