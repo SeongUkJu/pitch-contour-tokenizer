@@ -1,6 +1,6 @@
 # Pitch Contour Tokenization using VQ-VAE and Its Application on Korean Traditional Music Analysis
 
-**Seonguk Ju, Seola Cho, Sooin Chung, Danbinaerin Han, Dasaem Jeong**
+**Seonguk Ju, Seola Cho, Suin Chung, Danbinaerin Han, Dasaem Jeong**
 
 The official implementation of the ISMIR 2026 paper *"Pitch Contour
 Tokenization using VQ-VAE and Its Application on Korean Traditional
@@ -235,7 +235,7 @@ requirements.txt              # pip fallback
 @inproceedings{ju2026pitchcontour,
   title     = {Pitch Contour Tokenization using {VQ-VAE} and Its Application
                on Korean Traditional Music Analysis},
-  author    = {Ju, Seonguk and Cho, Seola and Chung, Sooin and
+  author    = {Ju, Seonguk and Cho, Seola and Chung, Suin and
                Han, Danbinaerin and Jeong, Dasaem},
   booktitle = {Proceedings of the 27th International Society for Music
                Information Retrieval Conference (ISMIR)},
