@@ -6,14 +6,13 @@ The official implementation of the ISMIR 2026 paper *"Pitch Contour
 Tokenization using VQ-VAE and Its Application on Korean Traditional
 Music Analysis"*.
 
-[**Paper**](#) &nbsp;|&nbsp;
+[**Paper**](https://arxiv.org/abs/2608.10979) &nbsp;|&nbsp;
 [**Demo**](https://seongukju.github.io/pitch-contour-tokenizer-page/) &nbsp;|&nbsp;
 [**Data & Weights**](https://github.com/SeongUkJu/pitch-contour-tokenizer/releases)
-<!-- TODO(camera-ready): paper / arXiv links -->
 
+[![arXiv](https://img.shields.io/badge/arXiv-2608.10979-b31b1b)](https://arxiv.org/abs/2608.10979)
 [![Code License: MIT](https://img.shields.io/badge/code%20license-MIT-blue)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%E2%80%933.13-blue)](pyproject.toml)
-<!-- TODO(camera-ready): arXiv badge -->
 
 The model learns a discrete vocabulary of local pitch-contour patterns
 directly from unlabeled audio:
@@ -60,8 +59,9 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Requires Python 3.10–3.13. Tested with Python 3.10, PyTorch 2.8 (CUDA 12.8)
-and 2.13 (CPU).
+Requires Python 3.10–3.13. `uv.lock` pins the paper environment —
+Python 3.10, PyTorch 2.8.0 (CUDA 12.8), scikit-learn 1.6.1, NumPy 2.2.6,
+umap-learn 0.5.12.
 
 ---
 
@@ -166,29 +166,37 @@ checkpoints. Writes `reconstructions.csv`
 
 ### Reproducibility notes
 
-- **Released checkpoints → paper numbers.** Inference and the post-training
-  analyses are deterministic (the analysis-side k-means is pinned to a single
-  thread via `threadpoolctl`), so the released checkpoints reproduce the
-  reported numbers exactly.
+- **Released checkpoints → paper numbers (VQ).** Inference and the
+  post-training analyses are deterministic for a fixed environment (the
+  analysis-side k-means is pinned to a single thread via `threadpoolctl`).
+  The released VQ checkpoints reproduce the reported numbers — their token
+  space is stored in the checkpoint, so the result is insensitive to
+  library versions.
+- **The autoencoder row additionally depends on the analysis environment
+  and the fit split.** The AE's post-hoc token space (StandardScaler →
+  UMAP → k-means) is refit at analysis time on train-split latents, so its
+  KLD, code-flip, and classification numbers are a function of both the
+  fit data and the numeric stack. The reported row was computed under the
+  pinned environment (`uv sync`); the same checkpoint under a different
+  stack (e.g., scikit-learn 1.9.0) yields slightly different numbers.
 - **The paper's split ships with the repo.** The released corpus is a
   (romanized) renamed copy of the internal data, so the default
   `split=random` shuffle sorts files differently and yields a different
   8:1:1 partition. `split=manifest` (`splits/inhouse_crepe_split.csv`)
   reproduces the paper's exact train/valid/test membership — use it
   whenever comparing against the released checkpoints or paper numbers.
-- **Retraining VQ models does not reproduce the released weights.** The VQ
-  codebook is initialized with k-means over encoder latents, and scikit-learn's
-  multi-threaded k-means is non-deterministic across runs even with a fixed
-  `random_state`: parallel floating-point reductions change the summation
-  order, and the resulting tiny differences in the initial codebook are
-  amplified over training. Retraining with identical code, data, and seed
-  therefore converges to different (equally valid) weights; qualitative
-  conclusions were consistent across reruns.
-- **Retraining the autoencoder is bit-exact reproducible** in the same
-  software/hardware environment (fixed seed, deterministic cuDNN) — its
-  training involves no k-means.
+- **Retraining does not reproduce the released weights — for any model.**
+  VQ: the codebook is initialized with multi-threaded k-means, which is
+  non-deterministic across runs even with a fixed `random_state` (parallel
+  floating-point reductions change the summation order), and the tiny
+  initial differences are amplified over training. AE: training involves
+  no k-means, but bit-exact retraining holds only on the original training
+  machine — with identical code, data, seed, and library versions on a
+  different machine/driver, retraining converged to different (equally
+  valid) weights.
 - Released checkpoints were trained with Python 3.10, PyTorch 2.8.0
-  (CUDA 12.8), and scikit-learn 1.6.1 on an NVIDIA RTX 4090.
+  (CUDA 12.8), and scikit-learn 1.6.1 on an NVIDIA RTX 4090; the same
+  stack is now pinned in `pyproject.toml`/`uv.lock`.
 
 ---
 
